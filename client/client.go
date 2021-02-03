@@ -3,15 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc"
 	"grpc-blog/blogpb"
 	"log"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func main() {
 	fmt.Println("Connecting to grpc server...")
 	adderess := "localhost:50051"
-	opts := grpc.WithInsecure()
+	creds, err := credentials.NewClientTLSFromFile("ssl/gogen/cert.pem", "")
+	if err != nil {
+		log.Fatalf("\nError loading certificates %v\n", adderess)
+	}
+	// opts := grpc.WithInsecure()
+	opts := grpc.WithTransportCredentials(creds)
 	conn, err := grpc.Dial(adderess, opts)
 	if err != nil {
 		log.Fatalf("\nError connecting to grpc server %v\n", adderess)

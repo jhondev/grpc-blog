@@ -3,18 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"grpc-blog/blogpb"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 type Blog struct {
@@ -65,18 +67,22 @@ func connectToMongodb() {
 }
 
 func main() {
-	// log.SetFlags(log.LstdFlags | log.Lshortfile) // use it for better error detail
+	log.SetFlags(log.LstdFlags | log.Lshortfile) // use it for better error detail
+
 	fmt.Println("Configuring grpc server...")
 	fmt.Println("Contecting to mongodb server...")
 	connectToMongodb()
 
-	address := "0.0.0.0:50051"
+	address := "localhost:50051"
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Failed to listen %v", err)
 	}
-
-	server := grpc.NewServer()
+	creds, err := credentials.NewServerTLSFromFile("ssl/gogen/cert.pem", "ssl/gogen/key.pem")
+	if err != nil {
+		log.Fatalf("Failed to load certificates %v", err)
+	}
+	server := grpc.NewServer(grpc.Creds(creds))
 	blogpb.RegisterBlogServiceServer(server, &grpcServer{})
 
 	go func() {
