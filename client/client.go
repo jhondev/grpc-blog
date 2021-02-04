@@ -27,6 +27,12 @@ func main() {
 
 	client := blogpb.NewBlogServiceClient(conn)
 	fmt.Println("Connected")
+
+	result := CreateBlog(client)
+	ReadBlog(client, result.Blog.Id)
+}
+
+func CreateBlog(client blogpb.BlogServiceClient) *blogpb.CreateBlogResponse {
 	blogReq := &blogpb.CreateBlogRequest{
 		Blog: &blogpb.Blog{
 			Title:    "Creating a blog grpc service",
@@ -35,9 +41,19 @@ func main() {
 		},
 	}
 	fmt.Println("Creating a blog...")
-	response, err := client.CreateBlog(context.Background(), blogReq)
+	result, err := client.CreateBlog(context.Background(), blogReq)
 	if err != nil {
 		log.Fatalf("\nError creating the blog: %v\n", err)
 	}
-	log.Printf("\nBlog created: %v\n", response)
+	log.Printf("\nBlog created: %v\n", result)
+
+	return result
+}
+
+func ReadBlog(client blogpb.BlogServiceClient, blogId string) {
+	result, err := client.ReadBlog(context.Background(), &blogpb.ReadBlogRequest{BlogId: blogId})
+	if err != nil {
+		log.Fatalf("\nError reading blog: %s\n", err)
+	}
+	log.Printf("\nBlog info: %v\n", result)
 }
