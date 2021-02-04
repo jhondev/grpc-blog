@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Connecting to grpc server...")
+	fmt.Println("\nConnecting to grpc server...")
 	adderess := "localhost:50051"
 	creds, err := credentials.NewClientTLSFromFile("ssl/gogen/cert.pem", "")
 	if err != nil {
@@ -29,6 +29,10 @@ func main() {
 	fmt.Println("Connected")
 
 	result := CreateBlog(client)
+	blog := ReadBlog(client, result.Blog.Id)
+	UpdateBlog(client, blog)
+	ReadBlog(client, result.Blog.Id)
+	DeleteBlog(client, result.Blog.Id)
 	ReadBlog(client, result.Blog.Id)
 }
 
@@ -40,7 +44,7 @@ func CreateBlog(client blogpb.BlogServiceClient) *blogpb.CreateBlogResponse {
 			AuthorId: "jhondev",
 		},
 	}
-	fmt.Println("Creating a blog...")
+	fmt.Println("\nCreating a blog...")
 	result, err := client.CreateBlog(context.Background(), blogReq)
 	if err != nil {
 		log.Fatalf("\nError creating the blog: %v\n", err)
@@ -50,10 +54,32 @@ func CreateBlog(client blogpb.BlogServiceClient) *blogpb.CreateBlogResponse {
 	return result
 }
 
-func ReadBlog(client blogpb.BlogServiceClient, blogId string) {
+func ReadBlog(client blogpb.BlogServiceClient, blogId string) *blogpb.Blog {
+	fmt.Println("\nReading a blog...")
 	result, err := client.ReadBlog(context.Background(), &blogpb.ReadBlogRequest{BlogId: blogId})
 	if err != nil {
 		log.Fatalf("\nError reading blog: %s\n", err)
 	}
 	log.Printf("\nBlog info: %v\n", result)
+	return result.Blog
+}
+
+func UpdateBlog(client blogpb.BlogServiceClient, blog *blogpb.Blog) string {
+	fmt.Println("\nUpdating a blog...")
+	blog.Title = "Title edited"
+	result, err := client.UpdateBlog(context.Background(), &blogpb.UpdateBlogRequest{Blog: blog})
+	if err != nil {
+		log.Fatalf("\nError updating blog: %s\n", err)
+	}
+	log.Printf("Blog updated (id:%s)", result.BlogId)
+	return result.BlogId
+}
+
+func DeleteBlog(client blogpb.BlogServiceClient, blogId string) {
+	fmt.Println("\nDeleting a blog...")
+	_, err := client.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{BlogId: blogId})
+	if err != nil {
+		log.Fatalf("\nError deleting blog: %s\n", err)
+	}
+	log.Printf("Blog deleted (id:%s)", blogId)
 }
